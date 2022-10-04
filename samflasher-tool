@@ -2,13 +2,15 @@ case $1 in detect)
     killall yad
 esac
 
-#Checa se está executando esse script instalado ou está executando sem instalar
+if [ -e /tmp/samflasher-tool/ ]; then
+    rm -rf /tmp/samflasher-tool/
+fi
+
 if [ ! -e /usr/bin/samflasher-tool ]; then
     echo Por favor instale o samflasher-tool pelo script install.sh
     exit
 fi
 
-#Vê se todas dependencias estão instaladas
 if [ ! -e /usr/bin/heimdall ]; then
     echo Você precisa instalar o Heimdall para usar o SamFlasher Tool.
     exit
@@ -16,7 +18,6 @@ elif [ ! -e /usr/bin/yad ]; then
     echo Você precisa instalar o YAD para usar o SamFlasher Tool.
 fi
 
-#Checa se algum dispositivo está conectado
 HD=$(heimdall detect)
 case $HD in '')
     HD='ERRO: Seu dispositivo não foi detectado'
@@ -25,14 +26,13 @@ case $HD in '')
     HD='Seu dispositivo foi detectado'
 esac
 
-#Dialogo Principal
 menu=$(yad --form --columns=1 \
    --window-icon=$HOME/.local/share/icons/samflashertool.png  \
    --width=900 \
    --height=200 \
    --center \
    --text="$HD" \
-   --title='SamFlasher Tool v1.1' \
+   --title='SamFlasher Tool v1.2' \
    --field='Não reiniciar após flash':CHK \
    --field='Detectar Dispositivo/Limpar arquivos selecionados':BTN "" "samflasher-tool detect" \
    --button=Flash \
@@ -40,15 +40,13 @@ menu=$(yad --form --columns=1 \
    --field=AP:FL \
    --field=BL:FL \
    --field=CSC:FL)
-   
-#Garante que o SamFlasher Tool irá fechar após fechar ele 
+
 case $menu in '')
     exit
 esac
 
-#Checa se tem algum dispositivo conectado para prosseguir
 case $HD in 'ERRO: Seu dispositivo não foi detectado')
-    ERR1=$(yad --title='SamFlasher Tool v1.1' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='ERRO: Não há dispositivos para flashar.' --button='Voltar ao Menu')
+    ERR1=$(yad --title='SamFlasher Tool v1.2' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='ERRO: Não há dispositivos para flashar.' --button='Voltar ao Menu')
 esac
 case $HD in 'ERRO: Seu dispositivo não foi detectado')
     case $ERR1 in '')
@@ -57,7 +55,6 @@ case $HD in 'ERRO: Seu dispositivo não foi detectado')
     esac
 esac
 
-#Verifica os arquivos selecionados e as opções selecionadas
 mkdir /tmp/samflasher-tool
 cd /tmp/samflasher-tool
 case $menu in *TRUE*)
@@ -82,13 +79,12 @@ a=$(cat 1)
 b=$(cat 2)
 c=$(cat 3)
 d=$(cat 4)
-#rm flp.sh 1 2 3 4
+rm flp.sh 1 2 3 4
 ap=$(file "$a")
 bp=$(file "$b")
 cp=$(file "$c")
 dp=$(file "$d")
 
-#Checa se você selecionou algum arquivo
 case $a in '')
     g=$((g+1))
 esac
@@ -102,14 +98,13 @@ case $d in '')
     g=$((g+1))
 esac
 case $g in 4)
-    timeout 3 yad --title='SamFlasher Tool v1.1' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='Por favor selecione algum arquivo.' --no-buttons --width=350 --height=1.1 --center
+    timeout 3 yad --title='SamFlasher Tool v1.2' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='Por favor selecione algum arquivo.' --no-buttons --width=350 --height=100 --center
     samflasher-tool
     exit
 esac
 
-timeout 3 yad --title='SamFlasher Tool v1.1' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='Por favor aguarde um momento, estamos analisando e extraindo os arquivos.' --no-buttons --width=250 --height=1.1 --center
+yad --title='SamFlasher Tool v1.2' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='Por favor aguarde um momento, estamos extraindo os arquivos.' --no-buttons --width=250 --height=100 --center &
 
-#Extrair os arquivos
 case $a in *.tar*)
     tar -xf "$a" > /dev/zero
 esac
@@ -127,7 +122,13 @@ case $lz4ck in *.lz4)
     lz4 -dm *.lz4 > /dev/zero
 esac
 
-#Criar o comando baseado nos arquivos existentes e flashar
+pids=$(jobs -pr)
+case $pids in *)
+    kill $pids
+esac
+
+yad --title='SamFlasher Tool v1.2' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='Por favor aguarde um momento, estamos flashando seu firmware.' --no-buttons --width=250 --height=100 --center & 
+
 files=$(ls)
 case $files in *boot.img*)
     parametros="$parametros --BOOT boot.img"
@@ -202,10 +203,15 @@ esac
 if [ ! -e *.pit ]; then
     heimdall flash $parametros $noreboot
     samflasher-tool
+    pids=$(jobs -pr)
+    case $pids in *)
+        kill $pids
+    esac
     exit
 fi
 heimdall flash --pit *.pit $parametros $noreboot
-
-#Limpar arquivos temporarios
-rm -rf /tmp/samflasher-tooltool
+pids=$(jobs -pr)
+case $pids in *)
+    kill $pids
+esac
 samflasher-tool
