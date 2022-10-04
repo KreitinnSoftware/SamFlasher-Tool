@@ -1,0 +1,211 @@
+case $1 in detect)
+    killall yad
+esac
+
+#Checa se está executando esse script instalado ou está executando sem instalar
+if [ ! -e /usr/bin/samflasher-tool ]; then
+    echo Por favor instale o samflasher-tool pelo script install.sh
+    exit
+fi
+
+#Vê se todas dependencias estão instaladas
+if [ ! -e /usr/bin/heimdall ]; then
+    echo Você precisa instalar o Heimdall para usar o SamFlasher Tool.
+    exit
+elif [ ! -e /usr/bin/yad ]; then
+    echo Você precisa instalar o YAD para usar o SamFlasher Tool.
+fi
+
+#Checa se algum dispositivo está conectado
+HD=$(heimdall detect)
+case $HD in '')
+    HD='ERRO: Seu dispositivo não foi detectado'
+;;
+    'Device detected')
+    HD='Seu dispositivo foi detectado'
+esac
+
+#Dialogo Principal
+menu=$(yad --form --columns=1 \
+   --window-icon=$HOME/.local/share/icons/samflashertool.png  \
+   --width=900 \
+   --height=200 \
+   --center \
+   --text="$HD" \
+   --title='SamFlasher Tool v1.1' \
+   --field='Não reiniciar após flash':CHK \
+   --field='Detectar Dispositivo/Limpar arquivos selecionados':BTN "" "samflasher-tool detect" \
+   --button=Flash \
+   --field=CP:FL \
+   --field=AP:FL \
+   --field=BL:FL \
+   --field=CSC:FL)
+   
+#Garante que o SamFlasher Tool irá fechar após fechar ele 
+case $menu in '')
+    exit
+esac
+
+#Checa se tem algum dispositivo conectado para prosseguir
+case $HD in 'ERRO: Seu dispositivo não foi detectado')
+    ERR1=$(yad --title='SamFlasher Tool v1.1' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='ERRO: Não há dispositivos para flashar.' --button='Voltar ao Menu')
+esac
+case $HD in 'ERRO: Seu dispositivo não foi detectado')
+    case $ERR1 in '')
+        samflasher-tool
+        exit
+    esac
+esac
+
+#Verifica os arquivos selecionados e as opções selecionadas
+mkdir /tmp/samflasher-tool
+cd /tmp/samflasher-tool
+case $menu in *TRUE*)
+    noreboot='--no-reboot'
+esac
+echo $menu > fl2p
+sed -i "s/ /#/g" fl2p
+sed -i "s/FALSE//g" fl2p
+sed -i "s/TRUE//g" fl2p
+sed -i "s/|/ /g" fl2p
+flsp=$(cat fl2p)
+echo 'echo "$1" > 1' > flp.sh
+echo 'echo "$2" > 2' >> flp.sh
+echo 'echo "$3" > 3' >> flp.sh
+echo 'echo "$4" > 4' >> flp.sh
+sh flp.sh $flsp
+sed -i 's/#/ /g' 1
+sed -i 's/#/ /g' 2
+sed -i 's/#/ /g' 3
+sed -i 's/#/ /g' 4
+a=$(cat 1)
+b=$(cat 2)
+c=$(cat 3)
+d=$(cat 4)
+#rm flp.sh 1 2 3 4
+ap=$(file "$a")
+bp=$(file "$b")
+cp=$(file "$c")
+dp=$(file "$d")
+
+#Checa se você selecionou algum arquivo
+case $a in '')
+    g=$((g+1))
+esac
+case $b in '')
+    g=$((g+1))
+esac
+case $c in '')
+    g=$((g+1))
+esac
+case $d in '')
+    g=$((g+1))
+esac
+case $g in 4)
+    timeout 3 yad --title='SamFlasher Tool v1.1' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='Por favor selecione algum arquivo.' --no-buttons --width=350 --height=1.1 --center
+    samflasher-tool
+    exit
+esac
+
+timeout 3 yad --title='SamFlasher Tool v1.1' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='Por favor aguarde um momento, estamos analisando e extraindo os arquivos.' --no-buttons --width=250 --height=1.1 --center
+
+#Extrair os arquivos
+case $a in *.tar*)
+    tar -xf "$a" > /dev/zero
+esac
+case $b in *.tar*)
+    tar -xf "$b" > /dev/zero
+esac
+case $c in *.tar*)
+    tar -xf "$c" > /dev/zero
+esac
+case $d in *.tar*)
+    tar -xf "$d" > /dev/zero
+esac
+lz4ck=$(ls)
+case $lz4ck in *.lz4)
+    lz4 -dm *.lz4 > /dev/zero
+esac
+
+#Criar o comando baseado nos arquivos existentes e flashar
+files=$(ls)
+case $files in *boot.img*)
+    parametros="$parametros --BOOT boot.img"
+esac
+case $files in *sboot.bin*)
+    parametros="$parametros --BOOTLOADER sboot.bin"
+esac
+case $files in *cm.bin*)
+    parametros="$parametros --CM cm.bin"
+esac
+case $files in *userdata.img*) 
+    parametros="$parametros --USERDATA userdata.img"
+esac
+case $files in *md5.img*)
+    parametros="$parametros --MD5HDR md5.img"
+esac
+case $files in *ect.bin*)
+    parametros="$parametros --ECT ect.bin"
+esac
+case $files in *modem_debug.bin*)
+    parametros="$parametros --CP_DEBUG modem_debug.bin"
+esac
+case $files in *hidden.img*)
+    parametros="$parametros --HIDDEN hidden.img"
+esac
+case $files in *cache.img*)
+    parametros="$parametros --CACHE cache.img"
+esac
+case $files in *efs.img*)
+    parametros="$parametros --EFS efs.img"
+esac
+case $files in *cpefs.img*)
+    parametros="$parametros --CPEFS cpefs.img"
+esac
+case $files in *m9kefs1.bin*)
+    parametros="$parametros --m9kefs1 m9kefs1.bin"
+esac
+case $files in *m9kefs2.bin*)
+    parametros="$parametros --m9kefs2 m9kefs2.bin"
+esac
+case $files in *m9kefs3.bin*)
+    parametros="$parametros --m9kefs3 m9kefs3.bin"
+esac
+case $files in *carrier.img*)
+    parametros="$parametros --CARRIER carrier.img"
+esac
+case $files in *param.bin*)
+    parametros="$parametros --PARAM param.bin"
+esac
+case $files in *recovery.img*)
+    parametros="$parametros --RECOVERY recovery.img"
+esac
+case $files in *modem_cdma.bin*)
+    parametros="$parametros --CDMA-RADIO modem_cdma.bin"
+esac
+case $files in *modem.bin*)
+    parametros="$parametros --RADIO modem.bin"
+esac
+case $files in *tombstones.img*)
+    parametros="$parametros --TOMBSTONES tombstones.img"
+esac
+case $files in *dnt.ssw*)
+    parametros="$parametros --DNT dnt.ssw"
+esac
+case $files in *steady.bin*)
+    parametros="$parametros --STEADY steady.bin"
+esac
+case $files in *system.img*)
+    parametros="$parametros --SYSTEM system.img"
+esac
+
+if [ ! -e *.pit ]; then
+    heimdall flash $parametros $noreboot
+    samflasher-tool
+    exit
+fi
+heimdall flash --pit *.pit $parametros $noreboot
+
+#Limpar arquivos temporarios
+rm -rf /tmp/samflasher-tooltool
+samflasher-tool
