@@ -11,4 +11,6 @@ Tested on ZorinOS 16.1
 
 `sh install.sh`
 
+Made by @Kreitinn
+Thx for @Ttheuxs for helping
 
