@@ -2,6 +2,22 @@ case $1 in detect)
     killall yad
 esac
 
+lng=$(cat $HOME/.local/share/samflasher-tool-settings/language.txt)
+
+case $1 in chglng)
+    killall yad
+    case $lng in EN-US)
+        echo PT-BR > $HOME/.local/share/samflasher-tool-settings/language.txt
+        samflasher-tool
+        exit
+        ;;
+        PT-BR)
+        echo EN-US > $HOME/.local/share/samflasher-tool-settings/language.txt
+        samflasher-tool
+        exit    
+    esac
+esac
+
 if [ -e /tmp/samflasher-tool/ ]; then
     rm -rf /tmp/samflasher-tool/
 fi
@@ -18,14 +34,46 @@ elif [ ! -e /usr/bin/yad ]; then
     echo You need to install YAD to use SamFlasher-Tool.
 fi
 
-asp="'t"
+case $lng in EN-US)
+    asp="'t"
+    dontreboot="Don$asp reboot after the installation"
+    detectdvc="Detect device/Clear files"
+    devicenr='ERROR: The device was not recognized'
+    nodvca='ERROR: No devices available for installation.'
+    backtomenu='Back to menu'
+    changelng='Change language to portuguese'
+    plschoosefiles='Please choose the files needed for installation.'
+    waitflash='Wait a while while we flash the firmware.'
+    waitextract='Wait a while while we extract the files.'
+    ;;
+    PT-BR)
+    dontreboot="Não reinicie após a instalação"
+    detectdvc="Detectar dispositivo/Limpar arquivos"
+    devicenr='ERRO: Dispositivo não reconhecido'
+    nodvca='ERRO: Não há dispositivos disponiveis para instalação.'
+    backtomenu='Voltar ao menu'
+    changelng='Mudar idioma para inglês'
+    plschoosefiles='Por favor escolha os arquivos necessitados para a instalação.'
+    waitflash='Espere um pouco enquanto nós flashamos o firmware.'
+    waitextract='Espere um pouco enquanto nós extraimos os arquivos'
+esac
 
 HD=$(heimdall detect)
 case $HD in '')
-    HD='ERROR: Device is missing'
-;;
+    case $lng in EN-US)
+        HD='ERROR: The device was not recognized'
+        ;;
+        PT-BR)
+        HD='ERRO: Dispositivo não reconhecido'
+    esac
+    ;;
     'Device detected')
-    HD='Device connected'
+    case $lng in EN-US)
+        HD='Device connected'
+        ;;
+        PT-BR)
+        HD='Dispositivo conectado'
+    esac
 esac
 
 menu=$(yad --form --columns=1 \
@@ -34,9 +82,10 @@ menu=$(yad --form --columns=1 \
    --height=200 \
    --center \
    --text="$HD" \
-   --title='SamFlasher Tool v1.3' \
-   --field="Don$asp reboot after the installation":CHK \
-   --field='Reload device/Clear files':BTN "" "samflasher-tool detect" \
+   --title='SamFlasher Tool v1.4' \
+   --field="$dontreboot":CHK \
+   --field="$detectdvc":BTN "" "samflasher-tool detect" \
+   --field="$changelng":BTN "samflasher-tool chglng" \
    --button=Flash \
    --field=CP:FL \
    --field=AP:FL \
@@ -47,10 +96,10 @@ case $menu in '')
     exit
 esac
 
-case $HD in 'ERROR: Device is missing')
-    ERR1=$(yad --title='SamFlasher Tool v1.3' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='ERROR: No devices available for installation.' --button='Back to menu')
+case $HD in "$devicenr")
+    ERR1=$(yad --title='SamFlasher Tool v1.4' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text="$nodvca" --button="$backtomenu")
 esac
-case $HD in 'ERROR: Device is missing')
+case $HD in "$devicenr")
     case $ERR1 in '')
         samflasher-tool
         exit
@@ -99,13 +148,14 @@ esac
 case $d in '')
     g=$((g+1))
 esac
+
 case $g in 4)
-    timeout 3 yad --title='SamFlasher Tool v1.3' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='Please choose the files needed for installation' --no-buttons --width=350 --height=100 --center
+    timeout 3 yad --title='SamFlasher Tool v1.4' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text="$plschoosefiles" --no-buttons --width=350 --height=100 --center
     samflasher-tool
     exit
 esac
 
-yad --title='SamFlasher Tool v1.3' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='Wait a while while we extract the files' --no-buttons --width=250 --height=100 --center &
+yad --title='SamFlasher Tool v1.4' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text=$waitextract --no-buttons --width=250 --height=100 --center &
 
 case $a in *.tar*)
     tar -xf "$a" > /dev/zero
@@ -129,7 +179,7 @@ case $pids in *)
     kill $pids
 esac
 
-yad --title='SamFlasher Tool v1.3' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text='Wait a while while we flash the firmware' --no-buttons --width=250 --height=100 --center & 
+yad --title='SamFlasher Tool v1.4' --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text="$waitflash" --no-buttons --width=250 --height=100 --center & 
 
 files=$(ls)
 case $files in *boot.img*)

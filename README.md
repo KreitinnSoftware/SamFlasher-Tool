@@ -3,7 +3,7 @@ A Simple tool to flash into samsung devices.
 Formats accepted: .tar
  
 ## Linux Installation
-Tested on ZorinOS 16.1
+Tested on ZorinOS 16.1 and Arch Linux
 
 `git clone https://github.com/KreitinnSoftware/SamFlasher-Tool.git`
 
