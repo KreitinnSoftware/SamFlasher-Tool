@@ -19,9 +19,9 @@ case $OS in *arch*linux*)
         sudo apt install yad
     fi
 esac
-if [ ! -e $HOME/.local/share ]; then; mkdir $HOME/.local/share; fi
-if [ ! -e $HOME/.local/share/applications ]; then; mkdir $HOME/.local/share/applications; fi
-if [ ! -e $HOME/.local/share/icons ]; then; mkdir $HOME/.local/share/icons; fi
+if [ ! -e $HOME/.local/share ]; then mkdir $HOME/.local/share; fi
+if [ ! -e $HOME/.local/share/applications ]; then mkdir $HOME/.local/share/applications; fi
+if [ ! -e $HOME/.local/share/icons ]; then mkdir $HOME/.local/share/icons; fi
 echo Installing SamFlasher Tool v1.5...
 sleep 0,4
 sudo cp samflasher-tool /usr/bin/samflasher-tool
