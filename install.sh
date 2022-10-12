@@ -42,3 +42,4 @@ if [ ! -e $HOME/.local/share/samflasher-tool-settings/ ]; then
     mkdir $HOME/.local/share/samflasher-tool-settings/; fi
 echo EN-US > $HOME/.local/share/samflasher-tool-settings/language.txt
 echo SamFlasher Tool v1.5 installed sucessfully.
+
