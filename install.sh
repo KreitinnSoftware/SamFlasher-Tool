@@ -1,6 +1,6 @@
 OS=$(cat /etc/os-release)
 echo Checking Dependencies...
-sleep 0,5
+sleep 0.5
 case $OS in *arch*linux*)
     echo Arch Linux detected!
     if [ ! -e /usr/bin/heimdall ]; then
@@ -22,14 +22,14 @@ esac
 if [ ! -e $HOME/.local/share ]; then mkdir $HOME/.local/share; fi
 if [ ! -e $HOME/.local/share/applications ]; then mkdir $HOME/.local/share/applications; fi
 if [ ! -e $HOME/.local/share/icons ]; then mkdir $HOME/.local/share/icons; fi
-echo Installing SamFlasher Tool v1.5...
-sleep 0,4
+echo Installing SamFlasher Tool v1.6...
+sleep 0.4
 sudo cp samflasher-tool /usr/bin/samflasher-tool
 sudo chmod +x /usr/bin/samflasher-tool
 cp icon.png $HOME/.local/share/icons/samflashertool.png    
 sm=SamFlasherTool.desktop
 echo [Desktop Entry] > $sm
-echo Name=SamFlasher Tool v1.5 >> $sm
+echo Name=SamFlasher Tool v1.6 >> $sm
 echo Comment=SamFlasher Tool based on Heimdall >> $sm
 echo Exec=/usr/bin/samflasher-tool >> $sm
 echo Icon=$HOME/.local/share/icons/samflashertool.png >> $sm
@@ -41,5 +41,5 @@ mv $sm $HOME/.local/share/applications/$sm
 if [ ! -e $HOME/.local/share/samflasher-tool-settings/ ]; then
     mkdir $HOME/.local/share/samflasher-tool-settings/; fi
 echo EN-US > $HOME/.local/share/samflasher-tool-settings/language.txt
-echo SamFlasher Tool v1.5 installed sucessfully.
+echo SamFlasher Tool v1.6 installed sucessfully.
 
