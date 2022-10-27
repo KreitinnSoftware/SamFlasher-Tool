@@ -30,11 +30,11 @@ case $1 in change-language)
     samflasher-tool
     exit; esac
 
-samflasherver='SamFlasher Tool v1.5'
+samflasherver='SamFlasher Tool v1.6'
 
 case $language in EN-US)
     dontreboot="Don't reboot after the installation"
-    detectdevicebtn="Detect device/Clear files"
+    detectdevicebtn="Reload"
     devicenotrecognized='ERROR: The device was not recognized'
     devicerecognized='Your device has been recognized'
     nodeviceavaible='ERROR: No devices available for installation.'
@@ -49,7 +49,7 @@ case $language in EN-US)
     ;;
     PT-BR)
     dontreboot="Não reinicie após a instalação"
-    detectdevicebtn="Detectar dispositivo/Limpar arquivos"
+    detectdevicebtn="Recarregar"
     devicenotrecognized='ERRO: Dispositivo não reconhecido'
     devicerecognized='Seu dispositivo foi reconhecido'
     nodeviceavaible='ERRO: Não há dispositivos disponiveis para instalação.'
@@ -100,12 +100,12 @@ case $devicestatus in $devicenotrecognized)
 mkdir $tmpdir
 cd $tmpdir
 
-menu=$(sed 's/ /@#@/g' <<< $menu)
-menu=$(sed 's/FALSE//g' <<< $menu)
-menu=$(sed 's/TRUE//g' <<< $menu)
-files2parse=$(sed 's/|/ /g' <<< $menu)
+menu=$(echo $menu | sed 's/ /@#@/g')
+menu=$(echo $menu | sed 's/FALSE//g')
+menu=$(echo $menu | sed 's/TRUE//g')
+files2parse=$(echo $menu | sed 's/|/ /g')
 
-echo -e 'echo $1 > 1\necho $2 > 2\necho $3 > 3\necho $4 > 4' > splitthefiles.sh
+echo 'echo $1 > 1\necho $2 > 2\necho $3 > 3\necho $4 > 4' > splitthefiles.sh
 sh splitthefiles.sh $files2parse
 first=$(sed 's/@#@/ /g' 1)
 second=$(sed 's/@#@/ /g' 2)
@@ -122,7 +122,7 @@ case $validfiles in '')
     samflasher-tool
     exit; esac
    
-case $firstcheck in *tar*archive*)
+case $firstcheck in *tar?archive*|*ext?filesystem*|*Android?bootimg*|*Android?sparse*)
     firstvalid=$valid
     ;;
     '')
@@ -130,7 +130,7 @@ case $firstcheck in *tar*archive*)
     ;;
     *)
     firstvalid=$invalid; esac
-case $secondcheck in *tar*archive*)
+case $secondcheck in *tar?archive*|*ext?filesystem*|*Android?bootimg*|*Android?sparse*)
     secondvalid=$valid
     ;;
     '')
@@ -138,7 +138,7 @@ case $secondcheck in *tar*archive*)
     ;;
     *)
     secondvalid=$invalid; esac
-case $thirdcheck in *tar*archive*)
+case $thirdcheck in *tar?archive*|*ext?filesystem*|*Android?bootimg*|*Android?sparse*)
     thirdvalid=$valid
     ;;
     '')
@@ -146,7 +146,7 @@ case $thirdcheck in *tar*archive*)
     ;;
     *)
     thirdvalid=$invalid; esac
-case $fourthcheck in *tar*archive*)
+case $fourthcheck in *tar?archive*|*ext?filesystem*|*Android?bootimg*|*Android?sparse*)
     fourthvalid=$valid
     ;;
     '')
@@ -196,6 +196,7 @@ case $fourthvalid in $invalid)
     exit; esac
 
 yad --title="$samflasherver" --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text="$wait2extract" --no-buttons --width=250 --height=100 --center &
+sleep 0.2
 
 case $first in *.tar*)
     tar -xf "$first" > /dev/zero; esac
@@ -214,6 +215,7 @@ rm *.lz4
 kill $(jobs -p)
 
 yad --title="$samflasherver" --window-icon=$HOME/.local/share/icons/samflashertool.png --warning --text="$wait2flash" --no-buttons --width=250 --height=100 --center & 
+sleep 0.2
 
 files=$(ls)
 
