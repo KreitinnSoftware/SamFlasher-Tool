@@ -2,7 +2,7 @@
 A Simple tool to flash into samsung devices.
 Formats accepted: .tar and .img
 
-Warning: to flash .img, you need to rename the .img to the partition to be flashed. ex: system.img, boot.img, recovery.img
+Warning: img support is not working 
  
 ## Linux Installation
 Tested on ZorinOS 16.1 and Arch Linux
