@@ -1,0 +1,276 @@
+#!/bin/sh
+tmpdir="$HOME/.local/samflashertooltmp/"
+mkdir -p $HOME/.local/share/samflasher-tool-settings
+if [ ! -e $SELF_DIR/usr/bin/samflasher-tool ]; then 
+    echo $SELF_DIR 
+    echo Error
+    exit; fi
+
+if [ ! -e $HOME/.local/share/samflasher-tool-settings/language.txt ]; then
+    if [ ! -e $HOME/.local/share/samflasher-tool-settings/ ]; then mkdir $HOME/.local/share/samflasher-tool-settings/; fi
+    echo EN-US > $HOME/.local/share/samflasher-tool-settings/language.txt
+    echo Created .conf file! ; fi
+
+if [ -e $tmpdir ]; then
+    rm -rf $tmpdir; fi
+
+language=$(cat $HOME/.local/share/samflasher-tool-settings/language.txt)
+case $1 in change-language)
+    case $language in EN-US)
+        echo PT-BR > $HOME/.local/share/samflasher-tool-settings/language.txt
+        $SELF_DIR/usr/bin/samflasher-tool reload
+        exit
+        ;;
+        PT-BR)
+        echo EN-US > $HOME/.local/share/samflasher-tool-settings/language.txt
+        $SELF_DIR/usr/bin/samflasher-tool reload
+        exit
+    esac
+    ;;
+    reload)
+    killall yad
+    $SELF_DIR/usr/bin/samflasher-tool
+    exit; esac
+
+samflasherver='SamFlasher Tool v1.6'
+
+case $language in EN-US)
+    dontreboot="Don't reboot after the installation"
+    detectdevicebtn="Reload"
+    devicenotrecognized='ERROR: The device was not recognized'
+    devicerecognized='Your device has been recognized'
+    nodeviceavaible='ERROR: No devices available for installation.'
+    backtomenu='Back to menu'
+    changelanguage='Change language to portuguese'
+    pleasechoosefiles='Please choose the files needed for installation.'
+    wait2extract='Wait a while while flash the firmware.'
+    wait2flash='Wait a while while extract the files.'
+    valid='is valid'
+    invalid='is invalid'
+    canceled='Installation cancelled..'
+    ;;
+    PT-BR)
+    dontreboot="Não reinicie após a instalação"
+    detectdevicebtn="Recarregar"
+    devicenotrecognized='ERRO: Dispositivo não reconhecido'
+    devicerecognized='Seu dispositivo foi reconhecido'
+    nodeviceavaible='ERRO: Não há dispositivos disponiveis para instalação.'
+    backtomenu='Voltar ao menu'
+    changelanguage='Mudar idioma para o inglês'
+    pleasechoosefiles='Por favor escolha os arquivos necessários para a instalação.'
+    wait2extract='Espere um pouco enquanto flashamos o firmware.'
+    wait2flash='Espere um pouco enquanto extraimos os arquivos'
+    valid='é válido'
+    invalid='é inválido'
+    canceled='Instação cancelada.'
+esac
+
+case $($SELF_DIR/usr/bin/heimdall detect) in '')
+    devicestatus=$devicenotrecognized
+    ;;
+    'Device detected')
+    devicestatus=$devicerecognized; esac
+    
+menu=$($SELF_DIR/usr/bin/yad --form --columns=1 \
+   --window-icon=$SELF_DIR/usr/bin/samflashertool.png  \
+   --width=900 \
+   --height=200 \
+   --center \
+   --text="$devicestatus" \
+   --title="$samflasherver" \
+   --field="$dontreboot":CHK \
+   --field="$detectdevicebtn":BTN "" "$SELF_DIR/usr/bin/samflasher-tool reload" \
+   --field="$changelanguage":BTN "$SELF_DIR/usr/bin/samflasher-tool change-language" \
+   --button=Flash \
+   --field=CP:FL \
+   --field=AP:FL \
+   --field=BL:FL \
+   --field=CSC:FL)
+   
+case $menu in '')
+    exit
+    ;;
+    *TRUE*)
+    noreboot='--no-reboot'
+esac
+
+case $devicestatus in $devicenotrecognized)
+    $SELF_DIR/usr/bin/yad --title="$samflasherver" --window-icon=$SELF_DIR/usr/bin/samflashertool.png --warning --text="$nodeviceavaible" --button="$backtomenu" 
+    $SELF_DIR/usr/bin/samflasher-tool
+    exit; esac
+
+mkdir $tmpdir
+cd $tmpdir
+
+menu=$(echo $menu | sed 's/ /@#@/g')
+menu=$(echo $menu | sed 's/FALSE//g')
+menu=$(echo $menu | sed 's/TRUE//g')
+files2parse=$(echo $menu | sed 's/|/ /g')
+
+echo 'echo $1 > 1\necho $2 > 2\necho $3 > 3\necho $4 > 4' > splitthefiles.sh
+sh splitthefiles.sh $files2parse
+first=$(sed 's/@#@/ /g' 1)
+second=$(sed 's/@#@/ /g' 2)
+third=$(sed 's/@#@/ /g' 3)
+fourth=$(sed 's/@#@/ /g' 4)
+rm 1 2 3 4 splitthefiles.sh
+if [ -e "$first" ]; then firstcheck=$(file "$first"); validfiles=$(($validfiles+1)); fi
+if [ -e "$second" ]; then secondcheck=$(file "$second"); validfiles=$(($validfiles+1)); fi
+if [ -e "$third" ]; then thirdcheck=$(file "$third"); validfiles=$(($validfiles+1)); fi
+if [ -e "$fourth" ]; then fourthcheck=$(file "$fourth"); validfiles=$(($validfiles+1)); fi
+
+case $validfiles in '')
+    timeout 3 $SELF_DIR/usr/bin/yad --title="$samflasherver" --window-icon=$SELF_DIR/usr/bin/samflashertool.png --warning --text="$pleasechoosefiles" --no-buttons --width=350 --height=100 --center
+    $SELF_DIR/usr/bin/samflasher-tool
+    exit; esac
+   
+case $firstcheck in *tar?archive*|*ext?filesystem*|*Android?bootimg*|*Android?sparse*)
+    firstvalid=$valid
+    ;;
+    '')
+    firstvalid=$valid
+    ;;
+    *)
+    firstvalid=$invalid; esac
+case $secondcheck in *tar?archive*|*ext?filesystem*|*Android?bootimg*|*Android?sparse*)
+    secondvalid=$valid
+    ;;
+    '')
+    secondvalid=$valid
+    ;;
+    *)
+    secondvalid=$invalid; esac
+case $thirdcheck in *tar?archive*|*ext?filesystem*|*Android?bootimg*|*Android?sparse*)
+    thirdvalid=$valid
+    ;;
+    '')
+    thirdvalid=$valid
+    ;;
+    *)
+    thirdvalid=$invalid; esac
+case $fourthcheck in *tar?archive*|*ext?filesystem*|*Android?bootimg*|*Android?sparse*)
+    fourthvalid=$valid
+    ;;
+    '')
+    fourthvalid=$valid
+    ;;
+    *)
+    fourthvalid=$invalid; esac
+    
+ValidInvalidFiles() {
+    case $first in '')
+        ;;
+        *)
+        first=$(basename "$first")
+        first=$(echo "$first" "$firstvalid"); esac
+    case $second in '')
+        ;;
+        *)
+        second=$(basename "$second")
+        second=$(echo "$second" "$secondvalid"); esac
+    case $third in '')
+        ;;
+        *)
+        third=$(basename "$third")
+        third=$(echo "$third" "$thirdvalid"); esac
+    case $fourth in '')
+        ;;
+        *)
+        fourth=$(basename "$fourth")
+        fourth=$(echo "$fourth" "$fourthvalid"); esac
+    $SELF_DIR/usr/bin/yad --warning --text="$first\n$second\n$third\n$fourth" --center --width=300 --no-buttons
+}    
+case $firstvalid in $invalid)
+    ValidInvalidFiles
+    $SELF_DIR/usr/bin/samflasher-tool
+    exit; esac
+case $secondvalid in $invalid)
+    ValidInvalidFiles
+    $SELF_DIR/usr/bin/samflasher-tool
+    exit; esac
+case $thirdvalid in $invalid)
+    ValidInvalidFiles
+    $SELF_DIR/usr/bin/samflasher-tool
+    exit; esac
+case $fourthvalid in $invalid)
+    ValidInvalidFiles
+    $SELF_DIR/usr/bin/samflasher-tool
+    exit; esac
+
+$SELF_DIR/usr/bin/yad --title="$samflasherver" --window-icon=$SELF_DIR/usr/bin/samflashertool.png --warning --text="$wait2extract" --no-buttons --width=250 --height=100 --center &
+sleep 0.2
+
+case $first in *.tar*)
+    tar -xf "$first" > /dev/zero; esac
+case $second in *.tar*)
+    tar -xf "$second" > /dev/zero; esac
+case $third in *.tar*)
+    tar -xf "$third" > /dev/zero; esac
+case $fourth in *.tar*)
+    tar -xf "$fourth" > /dev/zero; esac
+lz4check=$(ls)
+case $lz4check in *.lz4)
+    lz4 -dm *.lz4 > /dev/zero; esac
+
+rm *.lz4
+    
+kill $(jobs -p)
+
+$SELF_DIR/usr/bin/yad --title="$samflasherver" --window-icon=$SELF_DIR/usr/bin/samflashertool.png --warning --text="$wait2flash" --no-buttons --width=250 --height=100 --center & 
+sleep 0.2
+
+files=$(ls)
+
+case $files in *boot.img*)
+    parameters="$parameters --BOOT boot.img"; esac
+case $files in *sboot.bin*)
+    parameters="$parameters --BOOTLOADER sboot.bin"; esac
+case $files in *cm.bin*)
+    parameters="$parameters --CM cm.bin"; esac
+case $files in *userdata.img*) 
+    parameters="$parameters --USERDATA userdata.img"; esac
+case $files in *md5.img*)
+    parameters="$parameters --MD5HDR md5.img"; esac
+case $files in *ect.bin*)
+    parameters="$parameters --ECT ect.bin"; esac
+case $files in *modem_debug.bin*)
+    parameters="$parameters --CP_DEBUG modem_debug.bin"; esac
+case $files in *hidden.img*)
+    parameters="$parameters --HIDDEN hidden.img"; esac
+case $files in *cache.img*)
+    parameters="$parameters --CACHE cache.img"; esac
+case $files in *efs.img*)
+    parameters="$parameters --EFS efs.img"; esac
+case $files in *cpefs.img*)
+    parameters="$parameters --CPEFS cpefs.img"; esac
+case $files in *m9kefs1.bin*)
+    parameters="$parameters --m9kefs1 m9kefs1.bin"; esac
+case $files in *m9kefs2.bin*)
+    parameters="$parameters --m9kefs2 m9kefs2.bin"; esac
+case $files in *m9kefs3.bin*)
+    parameters="$parameters --m9kefs3 m9kefs3.bin"; esac
+case $files in *carrier.img*)
+    parameters="$parameters --CARRIER carrier.img"; esac
+case $files in *param.bin*)
+    parameters="$parameters --PARAM param.bin"; esac
+case $files in *recovery.img*)
+    parameters="$parameters --RECOVERY recovery.img"; esac
+case $files in *modem_cdma.bin*)
+    parameters="$parameters --CDMA-RADIO modem_cdma.bin"; esac
+case $files in *modem.bin*)
+    parameters="$parameters --RADIO modem.bin"; esac
+case $files in *tombstones.img*)
+    parameters="$parameters --TOMBSTONES tombstones.img"; esac
+case $files in *dnt.ssw*)
+    parameters="$parameters --DNT dnt.ssw"; esac
+case $files in *steady.bin*)
+    parameters="$parameters --STEADY steady.bin"; esac
+case $files in *system.img*)
+    parameters="$parameters --SYSTEM system.img"; esac
+
+kill $(jobs -p)
+if [ ! -e *.pit ]; then 
+    $SELF_DIR/usr/bin/heimdall flash $parameters $noreboot
+    $SELF_DIR/usr/bin/samflasher-tool; exit; fi
+$SELF_DIR/usr/bin/heimdall flash --pit *.pit $parameters $noreboot
+
