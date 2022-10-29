@@ -1,8 +1,6 @@
 # SamFlasher-Tool
 A Simple tool to flash into samsung devices.
-Formats accepted: .tar and .img
-
-Warning: img support is not working 
+Formats accepted: .tar
  
 ## Linux Installation
 Tested on ZorinOS 16.1 and Arch Linux
